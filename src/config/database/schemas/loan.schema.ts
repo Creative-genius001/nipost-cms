@@ -1,30 +1,55 @@
-import { Schema, model, Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
-const LoanSchema = new Schema({
-  memberId: {
+export type LoanDocument = HydratedDocument<Loan>;
+
+@Schema({ collection: 'loans', timestamps: true })
+export class Loan {
+  @Prop({
     type: Types.ObjectId,
-    required: true,
     ref: 'Member',
-  },
-  principal: {
-    type: Number,
     required: true,
-  },
-  interestRate: {
-    type: Number,
+  })
+  memberId: Types.ObjectId;
+
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Account',
+    unique: true,
     required: true,
-  },
-  status: {
+  })
+  accountId: Types.ObjectId;
+
+  @Prop({ type: Number, required: true })
+  principalAmount: number;
+
+  @Prop({ type: Number, required: true })
+  interestRate: number;
+
+  @Prop({ type: Number, required: true })
+  loanDuration: number;
+
+  @Prop({ type: Date, required: true })
+  startDate: Date; // Disbursement date
+
+  @Prop({
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'active', 'paid'],
+    enum: ['ACTIVE', 'PAID_OFF', 'DEFAULT'],
     required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  })
+  status: 'ACTIVE' | 'PAID_OFF' | 'DEFAULT';
+}
+
+export const LoanSchema = SchemaFactory.createForClass(Loan);
+
+LoanSchema.index({ memberId: 1 });
+LoanSchema.index({ accountId: 1 });
+LoanSchema.index({ startDate: 1 });
+LoanSchema.index({ status: 1 });
+
+LoanSchema.index({
+  memberId: 1,
+  accountId: 1,
+  status: 1,
+  startDate: -1,
 });
-
-const Loan = model('Loan', LoanSchema);
-
-export default Loan;

@@ -82,7 +82,7 @@ export class AuthService {
                 throw new BadRequestException('Incorrect credentials')
             };
 
-            const {accessToken} = await this.generateTokens('member', member._id.toString());
+            const {accessToken} = await this.generateTokens(member.role , member._id.toString());
 
             this.logger.info('MEMBER_LOGGEDIN', {
                 id: member._id.toString(),
@@ -110,7 +110,7 @@ export class AuthService {
 
         const accessToken = await this.jwtService.signAsync(payload, {
             secret: jwtConstants.access_token_secret,
-            expiresIn: '2d',
+            expiresIn: '30m',
         });
 
         return { accessToken };

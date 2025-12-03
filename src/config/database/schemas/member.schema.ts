@@ -1,4 +1,3 @@
-// src/modules/members/schemas/member.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
@@ -25,10 +24,14 @@ export class Member {
   password: string;
 
   @Prop({ type: String, enum: ['member', 'admin'], default: 'member' })
-  role: string;
+  role: 'member' | 'admin';
 
   @Prop()
   joinedAt: Date;
 }
 
 export const MemberSchema = SchemaFactory.createForClass(Member);
+
+MemberSchema.index({ memberId: 1 });
+MemberSchema.index({ email: 1 });
+MemberSchema.index({ joinedAt: 1 });
