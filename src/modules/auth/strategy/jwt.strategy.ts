@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 
 interface JwtPayload {
   sub: string;
+  role: string
 }
 
 @Injectable()
@@ -23,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new UnauthorizedException('Invalid access token');
     }
     
-    return { userId: payload.sub };
+    return { id: payload.sub, role: payload.role };
   }
 }
 

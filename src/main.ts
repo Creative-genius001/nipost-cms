@@ -5,6 +5,8 @@ import * as dotenv from 'dotenv';
 import helmet from 'helmet';
 import { HttpExceptionsFilter } from './common/filters/http-exceptions.filter';
 
+declare const module: any;
+
 async function bootstrap() {
   dotenv.config();
 
@@ -18,6 +20,11 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
+
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 
   logger.info(`Application is running on: ${await app.getUrl()}`);
 }

@@ -15,11 +15,11 @@ export class Account {
   })
   memberId: Types.ObjectId;
 
-  @Prop({ type: Number, required: true })
+  @Prop({ type: Number, required: true, default: 0 })
   balance: number;
 
-  @Prop({ type: Number, default: 0 }) // optional field
-  interestRate?: number; // Annual rate applied to the account
+  @Prop({ type: Number, default: 0 })
+  interestRate?: number;
 }
 
 export const AccountSchema = SchemaFactory.createForClass(Account);

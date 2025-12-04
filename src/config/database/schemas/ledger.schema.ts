@@ -13,10 +13,10 @@ export class Ledger {
 
   @Prop({
     type: String,
-    enum: ['contribution', 'loan', 'repayment', 'withdrawal'],
+    enum: ['CONTRIBUTION', 'LOAN', 'REPAYMENT', 'WITHDRAWAL'],
     required: true,
   })
-  category: 'contribution' | 'loan' | 'repayment' | 'withdrawal';
+  category: 'CONTRIBUTION' | 'LOAN' | 'REPAYMENT' | 'WITHDRAWAL';
 
   @Prop({ type: Types.ObjectId, required: true, ref: 'Member' })
   memberId: Types.ObjectId;
@@ -26,10 +26,10 @@ export class Ledger {
 
   @Prop({
     type: String,
-    enum: ['credit', 'debit'],
+    enum: ['CREDIT', 'DEBIT'],
     required: true,
   })
-  direction: 'credit' | 'debit';
+  direction: 'CREDIT' | 'DEBIT';
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
@@ -37,11 +37,10 @@ export class Ledger {
 
 export const LedgerSchema = SchemaFactory.createForClass(Ledger);
 
-LedgerSchema.index({ memberId: 1 });
 LedgerSchema.index({ referenceId: 1 });
-LedgerSchema.index({ category: 1 });
+LedgerSchema.index({ category: 1, createdAt: -1 });
 LedgerSchema.index({ createdAt: -1 });
-LedgerSchema.index({ participantId: 1, createdAt: -1 });
+LedgerSchema.index({ memberId: 1, createdAt: -1 });
 LedgerSchema.index({ referenceId: 1, category: 1 });
 LedgerSchema.index({ memberId: 1, category: 1 });
 LedgerSchema.index({ category: 1, direction: 1 });

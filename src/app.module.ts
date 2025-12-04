@@ -9,11 +9,15 @@ import { AuthModule } from './modules/auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseModule } from './config/database/database.module';
+import { LedgerModule } from './modules/ledger/ledger.module';
+import { WithdrawalModule } from './modules/withdrawal/withdrawal.module';
 @Module({
   imports: [
     LoggerModule,
     DatabaseModule,
     AuthModule,
+    LedgerModule,
+    WithdrawalModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

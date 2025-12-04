@@ -1,25 +1,29 @@
 /* eslint-disable prettier/prettier */
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { AppLogger } from 'src/common/logger/logger.service';
 import *  as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { jwtConstants } from './constants/constant';
 import { LoginResponse, SignupResponse } from './interface/auth.interface';
 import { LoginDto, SignupDto } from './dto/auth.dto';
-import { Member } from 'src/config/database/schemas/member.schema';
-import { Model } from 'mongoose';
+import { Member, MemberDocument } from 'src/config/database/schemas/member.schema';
+import mongoose, { Model } from 'mongoose';
 import { generateMemberId } from 'src/utils/generate-member-id';
 import { randomInt } from 'crypto';
+import { Account, AccountDocument } from 'src/config/database/schemas/account.schema';
 
 
 @Injectable()
 export class AuthService {
 
     constructor(
-        @InjectModel(Member.name) private memberModel: Model<Member>,
+        @InjectModel(Member.name) private readonly memberModel: Model<MemberDocument>,
+        @InjectModel(Account.name) private readonly accountModel: Model<AccountDocument>,
         private readonly logger: AppLogger,
         private readonly jwtService: JwtService,
+        @InjectConnection()
+        private readonly connection: mongoose.Connection,
     ){}
 
     async signup(memberData: SignupDto, userAgent: string, ipAddress: string): Promise<SignupResponse> {
@@ -43,6 +47,30 @@ export class AuthService {
                 password: hashedPassword, 
                 joinedAt: new Date(),
             });
+
+            const newAccount = new this.accountModel({
+                memberId: newMember._id,
+                balance: 0,
+            })
+
+            const session = await this.connection.startSession();
+            session.startTransaction();
+
+            try {
+                await newMember.save({ session });
+
+                await newAccount.save({ session });
+
+                await session.commitTransaction();
+                
+            } catch (error) {
+                await session.abortTransaction();
+                this.logger.error('Error during member signup transaction', error);
+                throw new InternalServerErrorException('Signup failed. Please try again later.');
+                
+            }finally{
+                await session.endSession();
+            }
 
             await newMember.save();
 

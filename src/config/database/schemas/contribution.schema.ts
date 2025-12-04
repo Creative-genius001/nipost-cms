@@ -30,7 +30,6 @@ export class Contribution {
 
 export const ContributionSchema = SchemaFactory.createForClass(Contribution);
 
-ContributionSchema.index({ memberId: 1 });
 ContributionSchema.index({ createdAt: -1 });
 
 ContributionSchema.index({ memberId: 1, createdAt: -1 });

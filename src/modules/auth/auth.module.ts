@@ -9,6 +9,7 @@ import { LoggerModule } from '../../common/logger/logger.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Member, MemberSchema } from 'src/config/database/schemas/member.schema';
+import { Account, AccountSchema } from 'src/config/database/schemas/account.schema';
 
 
 
@@ -25,7 +26,10 @@ import { Member, MemberSchema } from 'src/config/database/schemas/member.schema'
             inject: [ConfigService],   
         }),
         PassportModule,
-        MongooseModule.forFeature([{ name: Member.name, schema: MemberSchema }])
+        MongooseModule.forFeature([
+            { name: Member.name, schema: MemberSchema },
+            { name: Account.name, schema: AccountSchema}
+        ])
     ],
   controllers: [AuthController],
   providers: [ AuthService, JwtStrategy ],
