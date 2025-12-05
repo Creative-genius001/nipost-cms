@@ -1,6 +1,13 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
 import { LedgerService } from './ledger.service';
 import { AuthGuard } from '@nestjs/passport';
+
+interface payload {
+  user: {
+    id: string;
+    role: string;
+  };
+}
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('ledger')
@@ -8,8 +15,9 @@ export class LedgerController {
   constructor(private readonly ledgerService: LedgerService) {}
 
   @Get()
-  async findAll() {
-    return await this.ledgerService.getAllLedgers();
+  async findAll(@Req() req: payload) {
+    const role = req.user.role;
+    return await this.ledgerService.getAllLedgers(role);
   }
   @Get(':id')
   async findOne(@Param('id') id: string) {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -12,8 +12,11 @@ export class LedgerService {
     @InjectModel(Ledger.name)
     private readonly ledgerModel: Model<LedgerDocument>,
   ) {}
-  async getAllLedgers(): Promise<Ledger[]> {
-    return this.ledgerModel.find().exec();
+  async getAllLedgers(role: string): Promise<Ledger[]> {
+    if (role !== 'admin') {
+      throw new ForbiddenException('Forbidden');
+    }
+    return this.ledgerModel.find().sort({ createdAt: -1 }).exec();
   }
 
   async getLedgerByMemberId(memberId: string): Promise<Ledger> {
