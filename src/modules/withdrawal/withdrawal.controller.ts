@@ -13,6 +13,13 @@ import {
   RequestWithdrawalDto,
 } from './dto/withdrawal.dto';
 
+interface payload {
+  user: {
+    id: string;
+    role: string;
+  };
+}
+
 @UseGuards(AuthGuard('jwt'))
 @Controller('withdrawal')
 export class WithdrawalController {
@@ -26,11 +33,13 @@ export class WithdrawalController {
 
   @HttpCode(200)
   @Post('/approve')
-  approve(@Req() req, @Body() approveWithdrawalDto: ApproveWithdrawalDto) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const role = req.user.role as string;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    const id = req.user.id as string;
+  approve(
+    @Req() req: payload,
+    @Body() approveWithdrawalDto: ApproveWithdrawalDto,
+  ) {
+    const role = req.user.role;
+
+    const id = req.user.id;
     return this.withdrawalService.approveWithdrawal(
       approveWithdrawalDto.withdrawalId,
       role,
