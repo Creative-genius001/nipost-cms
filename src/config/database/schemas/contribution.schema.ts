@@ -16,13 +16,10 @@ export class Contribution {
 
   @Prop({
     type: String,
-    enum: ['cash', 'transfer'],
+    enum: ['CASH', 'TRANSFER'],
     required: true,
   })
-  type: 'cash' | 'transfer';
-
-  @Prop({ type: String, required: true })
-  paymentReference: string;
+  type: 'CASH' | 'TRANSFER';
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;

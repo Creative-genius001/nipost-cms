@@ -34,10 +34,27 @@ export class Loan {
 
   @Prop({
     type: String,
-    enum: ['ACTIVE', 'PAID_OFF', 'DEFAULT'],
+    enum: ['ACTIVE', 'PAID', 'PENDING', 'REJECTED'],
     required: true,
+    default: 'PENDING',
   })
-  status: 'ACTIVE' | 'PAID_OFF' | 'DEFAULT';
+  status: 'ACTIVE' | 'PAID' | 'PENDING' | 'REJECTED';
+
+  @Prop({
+    type: [
+      {
+        status: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
+        changedBy: { type: Types.ObjectId, ref: 'Member' },
+      },
+    ],
+    default: [],
+  })
+  statusHistory: {
+    status: string;
+    timestamp: Date;
+    changedBy?: Types.ObjectId;
+  }[];
 }
 
 export const LoanSchema = SchemaFactory.createForClass(Loan);

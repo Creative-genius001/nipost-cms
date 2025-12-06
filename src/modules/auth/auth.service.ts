@@ -87,13 +87,15 @@ export class AuthService {
 
             return {
                 message: 'Signup successful',
-                id: newMember._id.toString(),
-                memberId: newMember.memberId,
-                firstname: newMember.firstname,
-                lastname: newMember.lastname,
-                email: newMember.email,
-                role: newMember.role,
-                accessToken: accessToken,
+                data: {
+                    id: newMember._id.toString(),
+                    memberId: newMember.memberId,
+                    firstname: newMember.firstname,
+                    lastname: newMember.lastname,
+                    email: newMember.email,
+                    role: newMember.role,
+                    accessToken: accessToken,
+                }
             };
     }
 
@@ -123,13 +125,15 @@ export class AuthService {
 
             return {
                 message: 'Login successful',
-                id: member._id.toString(),
-                memberId: member.memberId,
-                firstname: member.firstname,
-                lastname: member.lastname,
-                email: member.email,
-                role: member.role,
-                accessToken: accessToken,
+                data: {
+                    id: member._id.toString(),
+                    memberId: member.memberId,
+                    firstname: member.firstname,
+                    lastname: member.lastname,
+                    email: member.email,
+                    role: member.role,
+                    accessToken: accessToken,
+                }
             };
     }
 

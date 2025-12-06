@@ -11,11 +11,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseModule } from './config/database/database.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { WithdrawalModule } from './modules/withdrawal/withdrawal.module';
+import { ContributionModule } from './modules/contribution/contribution.module';
 @Module({
   imports: [
     LoggerModule,
     DatabaseModule,
     AuthModule,
+    ContributionModule,
     LedgerModule,
     WithdrawalModule,
     ConfigModule.forRoot({
