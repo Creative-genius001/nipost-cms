@@ -9,28 +9,24 @@ import {
 } from '@nestjs/common';
 import { LoanService } from './loan.service';
 import { AuthGuard } from '@nestjs/passport';
-
-interface payload {
-  user: {
-    id: string;
-    role: string;
-  };
-}
+import type { payload } from 'src/utils/type';
+import { LoanDto } from './dto/loan.dto';
 
 @UseGuards(AuthGuard('jwt'))
-@Controller('loans')
+@Controller('loan')
 export class LoanController {
   constructor(private loanService: LoanService) {}
 
-  @Post('request/:memberId')
-  requestLoan(@Param('memberId') memberId: string, @Body() dto: any) {
+  @Post('request')
+  requestLoan(@Req() req: payload, @Body() dto: LoanDto) {
+    const memberId = req.user.memberId;
     return this.loanService.requestLoan(memberId, dto);
   }
 
   @Get('member/:memberId')
-  getMemberLoans(@Req() req: payload, @Param('memberId') memberId: string) {
-    const role = req.user.role;
-    return this.loanService.getMemberLoans(role, memberId);
+  getMemberLoans(@Req() req: payload) {
+    const memberId = req.user.memberId;
+    return this.loanService.getMemberLoans(memberId);
   }
 
   @Get()

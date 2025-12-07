@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import mongoose, { Model } from 'mongoose';
+import mongoose, { Model, Types } from 'mongoose';
 import { AppLogger } from 'src/common/logger/logger.service';
 import {
   Account,
@@ -16,6 +16,7 @@ import {
   LedgerDocument,
 } from 'src/config/database/schemas/ledger.schema';
 import { Loan, LoanDocument } from 'src/config/database/schemas/loan.schema';
+import { LoanDto } from './dto/loan.dto';
 
 @Injectable()
 export class LoanService {
@@ -28,23 +29,24 @@ export class LoanService {
     private readonly logger: AppLogger,
   ) {}
 
-  async requestLoan(memberId: string, dto: any) {
-    return this.loanModel.create({
-      memberId,
-      amount: dto.amount,
-      purpose: dto.purpose,
-      durationMonths: dto.durationMonths,
-      interestRate: dto.interestRate,
-    });
+  async requestLoan(memberId: string, dto: LoanDto) {
+    //check if member has any unpain loans
+    try {
+      await this.loanModel.create({
+        memberId,
+        amount: dto.amount,
+        reason: dto.reason,
+        accountId: new Types.ObjectId(dto.accountId),
+      });
+
+      return { message: 'Loan has been sent for approval' };
+    } catch (error) {
+      this.logger.error('Loan request error', error);
+      throw new InternalServerErrorException('Internal Server Error');
+    }
   }
 
-  async getMemberLoans(
-    role: string,
-    memberId: string,
-  ): Promise<LoanDocument[]> {
-    if (role !== 'admin') {
-      throw new ForbiddenException('Forbidden');
-    }
+  async getMemberLoans(memberId: string): Promise<LoanDocument[]> {
     return this.loanModel.find({ memberId }).sort({ createdAt: -1 }).exec();
   }
 
@@ -78,13 +80,13 @@ export class LoanService {
       if (!account) {
         throw new NotFoundException('Account not found for the member');
       }
-      account.balance += loan.principalAmount;
+      account.balance += loan.amount;
       await account.save({ session });
 
       await this.loanModel.findByIdAndUpdate(
         loanId,
         {
-          $set: { status: 'APPROVED' },
+          $set: { status: 'APPROVED', startDate: new Date() },
           $push: {
             statusHistory: {
               status: 'APPROVED',
@@ -102,7 +104,7 @@ export class LoanService {
             category: 'LOAN',
             memberId: loan.memberId,
             type: 'CREDIT',
-            amount: loan.principalAmount,
+            amount: loan.amount,
           },
         ],
         { session },
