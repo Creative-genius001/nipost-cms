@@ -9,6 +9,10 @@ export interface SignupResponse {
         lastname: string,
         role: string,
         accessToken: string,
+        account: {
+            id: string,
+            balance: number
+        }
     }
 } 
 
@@ -22,5 +26,9 @@ export interface LoginResponse {
         lastname: string,
         role: string,
         accessToken: string,
+        account: {
+            id: string,
+            balance: number
+        }
     }
 }

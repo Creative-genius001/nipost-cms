@@ -1,9 +1,16 @@
-/* eslint-disable prettier/prettier */
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 
 const nigerianPhoneRegex = /^(\+234|0)?[789]\d{9}$/;
 
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/;
+const strongPasswordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,30}$/;
 
 export class SignupDto {
   @IsNotEmpty({ message: 'Email cannot be empty' })
@@ -14,15 +21,16 @@ export class SignupDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   @MaxLength(30, { message: 'Password must not exceed 30 characters' })
-  @Matches(strongPasswordRegex, { 
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.' 
+  @Matches(strongPasswordRegex, {
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
   })
   password: string;
 
   @IsNotEmpty({ message: 'Phone number cannot be empty' })
   @IsString({ message: 'Phone number must be a string' })
-  @Matches(nigerianPhoneRegex, { 
-    message: 'Phone number is not valid'
+  @Matches(nigerianPhoneRegex, {
+    message: 'Phone number is not valid',
   })
   phone: string;
 
@@ -45,4 +53,3 @@ export class LoginDto {
   @IsString()
   password: string;
 }
-

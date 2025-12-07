@@ -74,7 +74,7 @@ export class AuthService {
 
             await newMember.save();
 
-            const {accessToken} = await this.generateTokens('member', newMember._id.toString());
+            const {accessToken} = await this.generateTokens('member', newMember._id.toString(), newMember.memberId);
 
             this.logger.info('MEMBER_REGISTERED', {
                 id: newMember._id.toString(),
@@ -95,13 +95,21 @@ export class AuthService {
                     email: newMember.email,
                     role: newMember.role,
                     accessToken: accessToken,
+                    account: {
+                        id: newAccount._id.toString(),
+                        balance: newAccount.balance,
+                    }
                 }
             };
     }
 
     async login(memberData: LoginDto, userAgent: string, ipAddress: string): Promise<LoginResponse> {
 
-            const member = await this.memberModel.findOne({ email: memberData.email });
+            const session = await this.connection.startSession();
+            session.startTransaction();
+
+            try {
+                const member = await this.memberModel.findOne({ email: memberData.email }).session(session);
                 if (!member) {
                 throw new BadRequestException('Incorrect credentials');
             }
@@ -112,7 +120,13 @@ export class AuthService {
                 throw new BadRequestException('Incorrect credentials')
             };
 
-            const {accessToken} = await this.generateTokens(member.role , member._id.toString());
+            const account = await this.accountModel.findOne({ memberId: member._id }).session(session);
+            if(!account){
+                this.logger.error('Account for member not found during login', { memberId: member._id.toString() });
+                throw new InternalServerErrorException('Internal Server Error');
+            }
+
+            const {accessToken} = await this.generateTokens(member.role , member._id.toString(), member.memberId);
 
             this.logger.info('MEMBER_LOGGEDIN', {
                 id: member._id.toString(),
@@ -122,6 +136,8 @@ export class AuthService {
                 userAgent,
                 timestamp: new Date().toISOString(),
             })
+
+            await session.commitTransaction();
 
             return {
                 message: 'Login successful',
@@ -133,12 +149,26 @@ export class AuthService {
                     email: member.email,
                     role: member.role,
                     accessToken: accessToken,
+                    account: {
+                        id: account._id.toString(),
+                        balance: account.balance,
+                    }
                 }
-            };
+            };  
+
+            
+            } catch (error) {
+                await session.abortTransaction();
+                this.logger.error('Error during member login transaction', error);
+                throw new InternalServerErrorException('Login failed. Please try again later.');
+                
+            } finally {
+                await session.endSession();
+            }
     }
 
-    private async generateTokens(role: 'admin' | 'member', id: string): Promise<{ accessToken: string; }> {
-        const payload = { sub: id, role };
+    private async generateTokens(role: 'admin' | 'member', id: string, memberId: string): Promise<{ accessToken: string; }> {
+        const payload = { sub: id, role, memberId };
 
         const accessToken = await this.jwtService.signAsync(payload, {
             secret: jwtConstants.access_token_secret,
