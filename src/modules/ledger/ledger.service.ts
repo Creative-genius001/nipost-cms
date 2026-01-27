@@ -19,8 +19,12 @@ export class LedgerService {
     return this.ledgerModel.find().sort({ createdAt: -1 }).exec();
   }
 
-  async getLedgerByMemberId(memberId: string): Promise<Ledger> {
-    return this.ledgerModel.findById(memberId).exec();
+  async getLedgerByMemberId(memberId: string): Promise<Ledger[]> {
+    return this.ledgerModel
+      .find({ memberId })
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
   }
 
   async getLedgerByCategoryAndMemberId(): Promise<Ledger[]> {

@@ -19,6 +19,12 @@ export class LedgerController {
     const role = req.user.role;
     return await this.ledgerService.getAllLedgers(role);
   }
+
+  @Get('member/:memberId')
+  async findByMemberId(@Param('memberId') memberId: string) {
+    return await this.ledgerService.getLedgerByMemberId(memberId);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.ledgerService.getOneLedger(id);
