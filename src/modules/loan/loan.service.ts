@@ -30,12 +30,12 @@ export class LoanService {
   ) {}
 
   async requestLoan(memberId: string, dto: LoanDto) {
-    //check if member has any unpain loans
     try {
       await this.loanModel.create({
         memberId,
         amount: dto.amount,
         reason: dto.reason,
+        appliedDate: new Date().toISOString(),
         accountId: new Types.ObjectId(dto.accountId),
       });
 
@@ -86,7 +86,7 @@ export class LoanService {
       await this.loanModel.findByIdAndUpdate(
         loanId,
         {
-          $set: { status: 'APPROVED', startDate: new Date() },
+          $set: { status: 'APPROVED', outstandingBalance: loan.amount },
           $push: {
             statusHistory: {
               status: 'APPROVED',
@@ -134,7 +134,7 @@ export class LoanService {
     if (!loan) throw new NotFoundException('Loan not found');
 
     await this.loanModel.findByIdAndUpdate(loanId, {
-      $set: { status: 'REJECTED' },
+      $set: { status: 'REJECTED', outstandingBalance: 0 },
       $push: {
         statusHistory: {
           status: 'REJECTED   ',
