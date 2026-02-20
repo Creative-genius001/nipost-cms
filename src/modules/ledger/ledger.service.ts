@@ -5,6 +5,7 @@ import {
   Ledger,
   LedgerDocument,
 } from '../../config/database/schemas/ledger.schema';
+import { GetLedgersQueryDto } from './dto/ledger.dto';
 
 @Injectable()
 export class LedgerService {
@@ -12,11 +13,56 @@ export class LedgerService {
     @InjectModel(Ledger.name)
     private readonly ledgerModel: Model<LedgerDocument>,
   ) {}
-  async getAllLedgers(role: string): Promise<Ledger[]> {
+  async getAllLedgers(role: string, query: GetLedgersQueryDto) {
     if (role !== 'admin') {
       throw new ForbiddenException('Forbidden');
     }
-    return this.ledgerModel.find().sort({ createdAt: -1 }).exec();
+
+    const {
+      page = 1,
+      limit = 20,
+      direction,
+      type,
+      memberId,
+      startDate,
+      endDate,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
+
+    const filter: any = {};
+
+    if (direction) filter.direction = direction;
+    if (type) filter.type = type;
+    if (memberId) filter.memberId = memberId;
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const sort: any = {
+      [sortBy]: sortOrder === 'asc' ? 1 : -1,
+    };
+
+    const [data, total] = await Promise.all([
+      this.ledgerModel.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+
+      this.ledgerModel.countDocuments(filter),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async getLedgerByMemberId(memberId: string): Promise<Ledger[]> {
