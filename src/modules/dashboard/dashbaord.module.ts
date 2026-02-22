@@ -16,6 +16,14 @@ import {
   WithdrawalSchema,
 } from 'src/config/database/schemas/withdrawal.schema';
 import { Loan, LoanSchema } from 'src/config/database/schemas/loan.schema';
+import {
+  Member,
+  MemberSchema,
+} from 'src/config/database/schemas/member.schema';
+import {
+  Account,
+  AccountSchema,
+} from 'src/config/database/schemas/account.schema';
 
 @Module({
   imports: [
@@ -25,6 +33,8 @@ import { Loan, LoanSchema } from 'src/config/database/schemas/loan.schema';
       { name: Withdrawal.name, schema: WithdrawalSchema },
       { name: Ledger.name, schema: LedgerSchema },
       { name: Loan.name, schema: LoanSchema },
+      { name: Member.name, schema: MemberSchema },
+      { name: Account.name, schema: AccountSchema },
     ]),
   ],
   controllers: [DashboardController],

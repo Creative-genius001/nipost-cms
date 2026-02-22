@@ -1,4 +1,4 @@
-import { Controller, Body, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Body, Get, UseGuards, Req, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DashboardService } from './dashboard.service';
 
@@ -15,8 +15,15 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('/stats')
-  create(@Req() req: payload) {
-    const memberID = req.user.id;
-    return this.dashboardService.getDashboardStats(memberID);
+  create(@Req() req: payload, @Query() query: { memberId?: string }) {
+    const userID = req.user.id;
+    const memberID = query.memberId;
+    return this.dashboardService.getDashboardStats(userID, memberID);
+  }
+
+  @Get('/overview')
+  getOverview(@Req() req: payload) {
+    const role = req.user.role;
+    return this.dashboardService.getAdminDashboardStats(role);
   }
 }
