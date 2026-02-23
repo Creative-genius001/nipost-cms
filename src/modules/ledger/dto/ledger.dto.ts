@@ -23,15 +23,15 @@ export class GetLedgersQueryDto {
 
   @IsOptional()
   @IsString()
-  memberId?: string;
-
-  @IsOptional()
-  @IsString()
   startDate?: string;
 
   @IsOptional()
   @IsString()
   endDate?: string;
+
+  @IsOptional()
+  @IsString()
+  search?: string;
 
   @IsOptional()
   @IsIn(['createdAt', 'amount', 'direction'])

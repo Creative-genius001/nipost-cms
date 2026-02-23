@@ -6,12 +6,18 @@ import {
   LedgerDocument,
 } from '../../config/database/schemas/ledger.schema';
 import { GetLedgersQueryDto } from './dto/ledger.dto';
+import {
+  Account,
+  AccountDocument,
+} from 'src/config/database/schemas/account.schema';
 
 @Injectable()
 export class LedgerService {
   constructor(
     @InjectModel(Ledger.name)
     private readonly ledgerModel: Model<LedgerDocument>,
+    @InjectModel(Account.name)
+    private readonly accountModel: Model<AccountDocument>,
   ) {}
   async getAllLedgers(role: string, query: GetLedgersQueryDto) {
     if (role !== 'admin') {
@@ -23,18 +29,18 @@ export class LedgerService {
       limit = 20,
       direction,
       type,
-      memberId,
       startDate,
       endDate,
       sortBy = 'createdAt',
       sortOrder = 'desc',
+      search,
     } = query;
 
     const filter: any = {};
 
     if (direction) filter.direction = direction;
     if (type) filter.type = type;
-    if (memberId) filter.memberId = memberId;
+    if (search) filter.$text = { $search: search };
 
     if (startDate || endDate) {
       filter.createdAt = {};
@@ -48,14 +54,59 @@ export class LedgerService {
       [sortBy]: sortOrder === 'asc' ? 1 : -1,
     };
 
-    const [data, total] = await Promise.all([
-      this.ledgerModel.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+    const [totalBalanceAgg, data, total, numOfCreditsAgg, numOfDebitsAgg] =
+      await Promise.all([
+        this.accountModel.aggregate([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: '$balance' },
+            },
+          },
+        ]),
 
-      this.ledgerModel.countDocuments(filter),
-    ]);
+        this.ledgerModel.find(filter).sort(sort).skip(skip).limit(limit).lean(),
+
+        this.ledgerModel.countDocuments(filter),
+
+        this.ledgerModel.aggregate([
+          {
+            $match: {
+              direction: 'CREDIT',
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: '$amount' },
+            },
+          },
+        ]),
+
+        this.ledgerModel.aggregate([
+          {
+            $match: {
+              direction: 'DEBIT',
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: '$amount' },
+            },
+          },
+        ]),
+      ]);
+
+    const numOfCredits = numOfCreditsAgg[0]?.total ?? 0;
+    const numOfDebits = numOfDebitsAgg[0]?.total ?? 0;
+    const totalBalance = totalBalanceAgg[0]?.total ?? 0;
 
     return {
       data,
+      totalBalance,
+      numOfCredits,
+      numOfDebits,
       meta: {
         total,
         page,
