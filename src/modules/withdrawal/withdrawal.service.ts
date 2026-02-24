@@ -10,7 +10,7 @@ import {
   Withdrawal,
   WithdrawalDocument,
 } from 'src/config/database/schemas/withdrawal.schema';
-import { RequestWithdrawalDto } from './dto/withdrawal.dto';
+import { GetWithdrawalsQueryDto, RequestWithdrawalDto } from './dto/withdrawal.dto';
 import {
   Account,
   AccountDocument,
@@ -116,5 +116,80 @@ export class WithdrawalService {
     } finally {
       await session.endSession();
     }
+  }
+
+  async rejectWithdrawal(withdrawalId: string, role: string) {
+    if (role != 'admin') {
+      throw new ForbiddenException('Forbidden resource');
+    }
+    const withdrawal = await this.withdrawalModel.findById(withdrawalId);
+
+    if (!withdrawal) throw new BadRequestException('Withdrawal not found');
+    if (withdrawal.status !== 'PENDING')
+      throw new BadRequestException('Already processed');
+
+    withdrawal.status = 'REJECTED';
+    await withdrawal.save();
+
+    return { message: 'Withdrawal rejected' };
+  }
+
+  async getAllWithdrawals(role: string, query: GetWithdrawalsQueryDto) {
+    if (role !== 'admin') {
+      throw new ForbiddenException('Forbidden resource');
+    }
+
+    const { page = 1, limit = 20, status, startDate, endDate } = query;
+
+    const filter: any = {};
+
+    if (status) filter.status = status;
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) filter.createdAt.$lte = new Date(endDate);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [
+      data,
+      total,
+      totalAprovedWithdrawal,
+      totalPendingWithdrawal,
+      totalRejectedWithdrawal,
+    ] = await Promise.all([
+      this.withdrawalModel.find(filter).skip(skip).limit(limit).lean(),
+
+      this.withdrawalModel.countDocuments(filter),
+
+      this.withdrawalModel.countDocuments({
+        status: 'APPROVED',
+      }),
+
+      this.withdrawalModel.countDocuments({
+        status: 'PENDING',
+      }),
+
+      this.withdrawalModel.countDocuments({
+        status: 'REJECTED',
+      }),
+    ]).catch((err) => {
+      this.logger.error('Failed to get withdrawals', err);
+      throw new InternalServerErrorException();
+    });
+
+    return {
+      data,
+      totalAprovedWithdrawal,
+      totalPendingWithdrawal,
+      totalRejectedWithdrawal,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

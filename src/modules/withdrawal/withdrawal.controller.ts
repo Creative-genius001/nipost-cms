@@ -5,11 +5,14 @@ import {
   UseGuards,
   Req,
   HttpCode,
+  Query,
+  Get,
 } from '@nestjs/common';
 import { WithdrawalService } from './withdrawal.service';
 import { AuthGuard } from '@nestjs/passport';
 import {
   ApproveWithdrawalDto,
+  GetWithdrawalsQueryDto,
   RequestWithdrawalDto,
 } from './dto/withdrawal.dto';
 
@@ -24,6 +27,15 @@ interface payload {
 @Controller('withdrawal')
 export class WithdrawalController {
   constructor(private readonly withdrawalService: WithdrawalService) {}
+
+  @Get()
+  getAllWithdrawals(
+    @Req() req: payload,
+    @Query() query: GetWithdrawalsQueryDto,
+  ) {
+    const role = req.user.role;
+    return this.withdrawalService.getAllWithdrawals(role, query);
+  }
 
   @HttpCode(200)
   @Post('/request')
