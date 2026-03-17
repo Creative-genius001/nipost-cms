@@ -110,7 +110,6 @@ export class ContributionService {
   }
 
   async getAllContributions(role: string): Promise<ContributionDocument[]> {
-    this.logger.debug('role', { role });
     if (role != 'admin') {
       throw new ForbiddenException('Forbidden');
     }

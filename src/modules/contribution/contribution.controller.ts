@@ -10,6 +10,7 @@ import {
 import { ContributionService } from './contribution.service';
 import { AuthGuard } from '@nestjs/passport';
 import { createContributionDto } from './dto/contribution.dto';
+import { AppLogger } from 'src/common/logger/logger.service';
 
 interface payload {
   user: {
@@ -21,7 +22,10 @@ interface payload {
 @UseGuards(AuthGuard('jwt'))
 @Controller('contribution')
 export class ContributionController {
-  constructor(private readonly contributionService: ContributionService) {}
+  constructor(
+    private readonly contributionService: ContributionService,
+    private readonly logger: AppLogger,
+  ) {}
 
   @Post('/add')
   create(
@@ -43,7 +47,6 @@ export class ContributionController {
   @Get('/')
   getAll(@Req() req: payload) {
     const role = req.user.role;
-    console.log(role);
     return this.contributionService.getAllContributions(role);
   }
 }

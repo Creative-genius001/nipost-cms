@@ -7,7 +7,7 @@ export class createContributionDto {
 
   @IsNotEmpty()
   @IsString()
-  amount: string;
+  amount: number;
 
   @IsNotEmpty()
   @IsString()
