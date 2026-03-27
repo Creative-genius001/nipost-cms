@@ -72,24 +72,13 @@ export class LoanService {
       const loan = await this.loanModel.findById(loanId).session(session);
       if (!loan) throw new NotFoundException('Loan not found');
 
-      const account = await this.accountModel
-        .findOne({
-          memberId: loan.memberId,
-        })
-        .session(session);
-      if (!account) {
-        throw new NotFoundException('Account not found for the member');
-      }
-      account.balance += loan.amount;
-      await account.save({ session });
-
       await this.loanModel.findByIdAndUpdate(
         loanId,
         {
-          $set: { status: 'APPROVED', outstandingBalance: loan.amount },
+          $set: { status: 'ACTIVE', outstandingBalance: loan.amount },
           $push: {
             statusHistory: {
-              status: 'APPROVED',
+              status: 'ACTIVE',
               changedBy: adminId,
             },
           },
@@ -100,10 +89,10 @@ export class LoanService {
       await this.ledgerModel.create(
         [
           {
-            referenceId: loan._id,
+            referenceId: new Types.ObjectId(loan._id),
             category: 'LOAN',
             memberId: loan.memberId,
-            type: 'CREDIT',
+            direction: 'DEBIT',
             amount: loan.amount,
           },
         ],

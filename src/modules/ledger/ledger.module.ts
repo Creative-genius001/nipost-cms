@@ -10,9 +10,11 @@ import {
   Account,
   AccountSchema,
 } from 'src/config/database/schemas/account.schema';
+import { LoggerModule } from 'src/common/logger/logger.module';
 
 @Module({
   imports: [
+    LoggerModule,
     MongooseModule.forFeature([{ name: Ledger.name, schema: LedgerSchema }]),
     MongooseModule.forFeature([{ name: Account.name, schema: AccountSchema }]),
   ],

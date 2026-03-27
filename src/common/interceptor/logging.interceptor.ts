@@ -20,7 +20,7 @@ export class LoggingInterceptor implements NestInterceptor {
     //   method,
     //   path: originalUrl,  
     //   ip: ip || 'unknown',  
-    //   userAgent: request.headers['user-agent'] || 'not-provided',
+    //   userAgent: request.headers['Authorization'] || 'not-provided',
     // });
 
     return next.handle()

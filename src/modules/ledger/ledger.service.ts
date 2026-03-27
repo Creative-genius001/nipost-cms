@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -10,6 +14,7 @@ import {
   Account,
   AccountDocument,
 } from 'src/config/database/schemas/account.schema';
+import { AppLogger } from 'src/common/logger/logger.service';
 
 @Injectable()
 export class LedgerService {
@@ -18,6 +23,7 @@ export class LedgerService {
     private readonly ledgerModel: Model<LedgerDocument>,
     @InjectModel(Account.name)
     private readonly accountModel: Model<AccountDocument>,
+    private readonly logger: AppLogger,
   ) {}
   async getAllLedgers(role: string, query: GetLedgersQueryDto) {
     if (role !== 'admin') {
@@ -40,7 +46,11 @@ export class LedgerService {
 
     if (direction) filter.direction = direction;
     if (type) filter.type = type;
-    if (search) filter.$text = { $search: search };
+    if (search)
+      filter.$or = [
+        { memberId: { $regex: search, $options: 'i' } },
+        { referenceId: { $regex: search, $options: 'i' } },
+      ];
 
     if (startDate || endDate) {
       filter.createdAt = {};
@@ -96,7 +106,10 @@ export class LedgerService {
             },
           },
         ]),
-      ]);
+      ]).catch((err) => {
+        this.logger.error('Failed to get ledger entries', err);
+        throw new InternalServerErrorException();
+      });
 
     const numOfCredits = numOfCreditsAgg[0]?.total ?? 0;
     const numOfDebits = numOfDebitsAgg[0]?.total ?? 0;

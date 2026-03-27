@@ -20,8 +20,15 @@ export class Member {
   @Prop()
   email?: string;
 
-  @Prop()
+  @Prop({ type: String, required: true, select: false })
   password: string;
+
+  @Prop({
+    type: String,
+    enum: ['active', 'inactive', 'suspended'],
+    default: 'active',
+  })
+  status: 'active' | 'inactive' | 'suspended';
 
   @Prop({ type: String, enum: ['member', 'admin'], default: 'member' })
   role: 'member' | 'admin';
@@ -33,5 +40,8 @@ export class Member {
 export const MemberSchema = SchemaFactory.createForClass(Member);
 
 MemberSchema.index({ memberId: 1 });
+MemberSchema.index({ status: 1 });
+MemberSchema.index({ firstname: 1 });
+MemberSchema.index({ lastname: 1 });
 MemberSchema.index({ email: 1 });
 MemberSchema.index({ joinedAt: 1 });

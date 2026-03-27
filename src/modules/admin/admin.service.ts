@@ -12,7 +12,7 @@ import {
   Ledger,
   LedgerDocument,
 } from '../../config/database/schemas/ledger.schema';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Loan, LoanDocument } from 'src/config/database/schemas/loan.schema';
 import {
   Member,
@@ -21,6 +21,7 @@ import {
 import {
   BadRequestException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   Account,
@@ -49,6 +50,7 @@ export class AdminService {
     private memberModel: Model<MemberDocument>,
     @InjectModel(Account.name)
     private accountModel: Model<AccountDocument>,
+    @InjectConnection()
     private readonly connection: mongoose.Connection,
     private readonly logger: AppLogger,
   ) {}
@@ -329,24 +331,43 @@ export class AdminService {
 
   async recordLoanRepayment(
     payload: ApproveLoanDto,
-  ): Promise<{ message: string }> {
-    const { memberId, amount } = payload;
+  ): Promise<{ message: string, remainingBalance: number }> {
+    const { memberId, amount, loanId } = payload;
+    if (!loanId || loanId.trim() === '' || loanId === 'undefined') {
+      throw new BadRequestException('Invalid Parameters');
+    }
     const session = await this.connection.startSession();
     session.startTransaction();
 
     try {
-      const loan = await this.loanModel.findOneAndUpdate(
-        { memberId, status: 'ACTIVE' },
-        { $inc: { outstandingBalance: -amount } },
-        { session },
-      );
+      const loan = await this.loanModel.findOne({ _id: loanId, memberId }).session(session);
+      if (!loan) throw new NotFoundException('Loan not found');
+      if (loan.status === 'PAID') throw new BadRequestException('Loan is already fully paid');
+
+      const newBalance = loan.outstandingBalance - amount;
+
+      if (newBalance < 0) {
+        throw new BadRequestException(`Overpayment! Remaining balance is only ₦${loan.outstandingBalance}`);
+      }
+
+      loan.outstandingBalance = newBalance;
+
+      if (newBalance === 0) {
+        loan.status = 'PAID';
+        loan.statusHistory.push({
+          status: 'PAID',
+          timestamp: new Date(),
+        });
+      }
+
+      await loan.save({ session });
 
       await this.ledgerModel.create(
         [
           {
             referenceId: new Types.ObjectId(loan._id),
             category: 'REPAYMENT',
-            memberId: new Types.ObjectId(memberId),
+            memberId: memberId,
             direction: 'CREDIT',
             amount,
           },
@@ -355,7 +376,10 @@ export class AdminService {
       );
       await session.commitTransaction();
 
-      return { message: 'Loan repayment successfully committed' };
+      return { 
+        message: newBalance === 0 ? 'Loan fully repaid!' : 'Repayment recorded',
+        remainingBalance: newBalance 
+      };
     } catch (error) {
       await session.abortTransaction();
       this.logger.error('Failed to record loan repayment', error);
@@ -369,6 +393,11 @@ export class AdminService {
     payload: RecordWithdrawalDto,
   ): Promise<{ message: string }> {
     const { memberId, amount } = payload;
+
+    const member = await this.memberModel.findOne({ memberId }).exec();
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
     const session = await this.connection.startSession();
     session.startTransaction();
 
@@ -385,18 +414,26 @@ export class AdminService {
         { session },
       );
 
+      await this.accountModel.findOneAndUpdate(
+        { memberId: member._id },
+        { $inc: { balance: -amount } },
+        { session, new: true },
+      );
+
       await this.ledgerModel.create(
         [
           {
             referenceId: new Types.ObjectId(withdrawal._id),
             category: 'WITHDRAWAL',
-            memberId: new Types.ObjectId(memberId),
+            memberId: memberId,
             direction: 'DEBIT',
             amount,
           },
         ],
         { session },
       );
+
+      await session.commitTransaction()
 
       return { message: 'Withdrawal successfully committed' };
     } catch (error) {
@@ -412,6 +449,11 @@ export class AdminService {
     payload: RecordContributionDto,
   ): Promise<{ message: string }> {
     const { memberId, amount } = payload;
+
+    const member = await this.memberModel.findOne({ memberId }).exec();
+    if (!member) {
+      throw new NotFoundException('Member not found');
+    }
     const session = await this.connection.startSession();
     session.startTransaction();
 
@@ -419,7 +461,7 @@ export class AdminService {
       const [contribution] = await this.contributionModel.create(
         [
           {
-            memberId: new Types.ObjectId(memberId),
+            memberId: memberId,
             amount,
             type: 'CASH',
           },
@@ -427,12 +469,18 @@ export class AdminService {
         { session },
       );
 
+      await this.accountModel.findOneAndUpdate(
+        { memberId: member._id },
+        { $inc: { balance: amount } },
+        { session, new: true },
+      );
+
       await this.ledgerModel.create(
         [
           {
             referenceId: new Types.ObjectId(contribution._id),
             category: 'CONTRIBUTION',
-            memberId: new Types.ObjectId(memberId),
+            memberId: memberId,
             direction: 'CREDIT',
             amount,
           },
@@ -447,6 +495,20 @@ export class AdminService {
       throw new InternalServerErrorException('Failed to record contribution');
     } finally {
       await session.endSession();
+    }
+  }
+
+  async fectchActiveLoansForMember(
+    memberId: string,
+    status: string,
+  ): Promise<LoanDocument[]> {
+    try {
+      return this.loanModel.find({ memberId, status: status }).exec();
+    } catch (error) {
+      this.logger.error('Failed to fetch active loans for member', error);
+      throw new InternalServerErrorException(
+        'Failed to fetch active loans for member',
+      );
     }
   }
 }

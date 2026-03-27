@@ -109,7 +109,7 @@ export class AuthService {
             session.startTransaction();
 
             try {
-                const member = await this.memberModel.findOne({ email: memberData.email }).session(session);
+                const member = await this.memberModel.findOne({ email: memberData.email }).select('+password').session(session);
                 if (!member) {
                 throw new BadRequestException('Incorrect credentials');
             }
@@ -160,7 +160,12 @@ export class AuthService {
             } catch (error) {
                 await session.abortTransaction();
                 this.logger.error('Error during member login transaction', error);
-                throw new InternalServerErrorException('Login failed. Please try again later.');
+                if (error instanceof BadRequestException) {
+                    throw error;
+                } else {
+                    this.logger.error('Unexpected error during login', error);
+                    throw new InternalServerErrorException('Login failed. Please try again later.');
+                }
                 
             } finally {
                 await session.endSession();

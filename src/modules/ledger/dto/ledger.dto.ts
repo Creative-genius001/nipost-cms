@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { IsOptional, IsEnum, IsNumber, IsString, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 

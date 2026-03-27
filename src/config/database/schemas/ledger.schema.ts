@@ -44,3 +44,7 @@ LedgerSchema.index({ memberId: 1, createdAt: -1 });
 LedgerSchema.index({ referenceId: 1, category: 1 });
 LedgerSchema.index({ memberId: 1, category: 1 });
 LedgerSchema.index({ category: 1, direction: 1 });
+LedgerSchema.index({
+  memberId: 'text',
+  referenceId: 'text',
+});

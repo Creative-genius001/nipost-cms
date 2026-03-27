@@ -12,12 +12,18 @@ import { DatabaseModule } from './config/database/database.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { WithdrawalModule } from './modules/withdrawal/withdrawal.module';
 import { ContributionModule } from './modules/contribution/contribution.module';
+import { LoanModule } from './modules/loan/loan.module';
+import { DashboardModule } from './modules/dashboard/dashbaord.module';
+import { AdminModule } from './modules/admin/admin.module';
 @Module({
   imports: [
+    AdminModule,
     LoggerModule,
+    LoanModule,
     DatabaseModule,
     AuthModule,
     ContributionModule,
+    DashboardModule,
     LedgerModule,
     WithdrawalModule,
     ConfigModule.forRoot({

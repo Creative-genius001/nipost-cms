@@ -10,7 +10,10 @@ import {
   Withdrawal,
   WithdrawalDocument,
 } from 'src/config/database/schemas/withdrawal.schema';
-import { GetWithdrawalsQueryDto, RequestWithdrawalDto } from './dto/withdrawal.dto';
+import {
+  GetWithdrawalsQueryDto,
+  RequestWithdrawalDto,
+} from './dto/withdrawal.dto';
 import {
   Account,
   AccountDocument,
@@ -20,6 +23,10 @@ import {
   LedgerDocument,
 } from 'src/config/database/schemas/ledger.schema';
 import { AppLogger } from 'src/common/logger/logger.service';
+import {
+  Member,
+  MemberDocument,
+} from 'src/config/database/schemas/member.schema';
 
 @Injectable()
 export class WithdrawalService {
@@ -31,6 +38,8 @@ export class WithdrawalService {
     private readonly accountModel: Model<AccountDocument>,
     @InjectModel(Ledger.name)
     private readonly ledgerModel: Model<LedgerDocument>,
+    @InjectModel(Member.name)
+    private readonly memberModel: Model<MemberDocument>,
     @InjectConnection()
     private readonly connection: mongoose.Connection,
   ) {}
@@ -80,8 +89,12 @@ export class WithdrawalService {
       if (withdrawal.status !== 'PENDING')
         throw new BadRequestException('Already processed');
 
-      const account = await this.accountModel
+      const member = await this.memberModel
         .findOne({ memberId: withdrawal.memberId })
+        .session(session);
+
+      const account = await this.accountModel
+        .findOne({ memberId: member._id })
         .session(session);
 
       if (account.balance < withdrawal.amount)
@@ -159,7 +172,12 @@ export class WithdrawalService {
       totalPendingWithdrawal,
       totalRejectedWithdrawal,
     ] = await Promise.all([
-      this.withdrawalModel.find(filter).skip(skip).limit(limit).lean(),
+      this.withdrawalModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
 
       this.withdrawalModel.countDocuments(filter),
 

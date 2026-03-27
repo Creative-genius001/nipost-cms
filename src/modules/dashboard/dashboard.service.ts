@@ -18,7 +18,10 @@ import {
   Member,
   MemberDocument,
 } from 'src/config/database/schemas/member.schema';
-import { InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { getStartOfCurrentMonth } from 'src/utils/get-start-of-month';
 import {
   Account,
@@ -58,12 +61,18 @@ export class DashboardService {
       throw new UnauthorizedException('Unauthorized');
     }
     const [
+      balance,
       contributionsAgg,
       pendingWithdrawals,
       activeLoans,
       recentLedger,
       contributionChartData,
     ] = await Promise.all([
+      this.accountModel
+        .findOne({ memberId: member._id })
+        .select('balance')
+        .lean()
+        .exec(),
       this.contributionModel.aggregate([
         { $match: { memberId } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -71,7 +80,7 @@ export class DashboardService {
 
       await this.withdrawalModel.countDocuments({
         memberId,
-        status: 'pending',
+        status: 'PENDING',
       }),
 
       await this.loanModel.countDocuments({
@@ -98,8 +107,10 @@ export class DashboardService {
     });
 
     const totalContributions = contributionsAgg[0]?.total ?? 0;
+    const currentContributionBalance = balance?.balance ?? 0;
 
     return {
+      currentContributionBalance,
       totalContributions,
       activeLoans,
       pendingWithdrawals,
@@ -113,6 +124,10 @@ export class DashboardService {
     if (role !== 'admin') {
       throw new UnauthorizedException('Unauthorized');
     }
+
+    const currentYear = new Date().getFullYear();
+    const startOfYear = new Date(`${currentYear}-01-01T00:00:00.000Z`);
+    const endOfYear = new Date(`${currentYear}-12-31T23:59:59.999Z`);
     const [
       totalCooperativeBalanceAgg,
       outstandingLoansAgg,
@@ -123,8 +138,9 @@ export class DashboardService {
       monthlyOutflowAgg,
       pendingLoanItems,
       pendingWithdrawalItems,
+      chartYearlyData,
     ] = await Promise.all([
-      await this.accountModel.aggregate([
+      this.accountModel.aggregate([
         {
           $group: {
             _id: null,
@@ -132,21 +148,21 @@ export class DashboardService {
           },
         },
       ]),
-      await this.loanModel.aggregate([
+      this.loanModel.aggregate([
         { $match: { status: 'ACTIVE' } },
         { $group: { _id: null, total: { $sum: '$outstandingBalance' } } },
       ]),
-      await this.loanModel.countDocuments({
+      this.loanModel.countDocuments({
         status: 'PENDING',
       }),
 
-      await this.withdrawalModel.countDocuments({
+      this.withdrawalModel.countDocuments({
         status: 'PENDING',
       }),
 
-      await this.memberModel.countDocuments(),
+      this.memberModel.countDocuments(),
 
-      await this.ledgerModel.aggregate([
+      this.ledgerModel.aggregate([
         {
           $match: {
             direction: 'CREDIT',
@@ -161,7 +177,7 @@ export class DashboardService {
         },
       ]),
 
-      await this.ledgerModel.aggregate([
+      this.ledgerModel.aggregate([
         {
           $match: {
             direction: 'DEBIT',
@@ -178,7 +194,7 @@ export class DashboardService {
 
       this.loanModel
         .find({ status: 'PENDING' })
-        .select('memberId amount appliedDate status')
+        .select('memberId amount createdAt status')
         .sort({ createdAt: -1 })
         .limit(10)
         .lean(),
@@ -189,6 +205,28 @@ export class DashboardService {
         .sort({ createdAt: -1 })
         .limit(10)
         .lean(),
+
+      this.ledgerModel.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: startOfYear, $lte: endOfYear },
+          },
+        },
+        {
+          $group: {
+            _id: { $month: '$createdAt' },
+            inflow: {
+              $sum: {
+                $cond: [{ $eq: ['$direction', 'CREDIT'] }, '$amount', 0],
+              },
+            },
+            outflow: {
+              $sum: { $cond: [{ $eq: ['$direction', 'DEBIT'] }, '$amount', 0] },
+            },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
     ]).catch((error) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       this.logger.error('Error getting Admin Dashbaord Stats', { error });
@@ -201,7 +239,31 @@ export class DashboardService {
     const monthlyOutflow = monthlyOutflowAgg[0]?.total ?? 0;
     const pendingApprovals = pendingLoansNum + pendingWithdrawalNum;
 
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    const chartStats = monthNames.map((month, index) => {
+      const monthData = chartYearlyData.find((s) => s._id === index + 1);
+      return {
+        month,
+        inflow: monthData?.inflow || 0,
+        outflow: monthData?.outflow || 0,
+      };
+    });
+
     return {
+      chartStats,
       totalCooperativeBalance,
       outstandingLoans,
       pendingApprovals,

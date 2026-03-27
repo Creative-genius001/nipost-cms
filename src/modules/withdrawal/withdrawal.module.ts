@@ -15,6 +15,10 @@ import {
   AccountSchema,
 } from 'src/config/database/schemas/account.schema';
 import { LoggerModule } from 'src/common/logger/logger.module';
+import {
+  Member,
+  MemberSchema,
+} from 'src/config/database/schemas/member.schema';
 
 @Module({
   imports: [
@@ -23,6 +27,7 @@ import { LoggerModule } from 'src/common/logger/logger.module';
       { name: Withdrawal.name, schema: WithdrawalSchema },
       { name: Account.name, schema: AccountSchema },
       { name: Ledger.name, schema: LedgerSchema },
+      { name: Member.name, schema: MemberSchema },
     ]),
   ],
   controllers: [WithdrawalController],

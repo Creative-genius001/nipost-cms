@@ -7,11 +7,11 @@ import {
   HttpCode,
   Query,
   Get,
+  Param,
 } from '@nestjs/common';
 import { WithdrawalService } from './withdrawal.service';
 import { AuthGuard } from '@nestjs/passport';
 import {
-  ApproveWithdrawalDto,
   GetWithdrawalsQueryDto,
   RequestWithdrawalDto,
 } from './dto/withdrawal.dto';
@@ -44,18 +44,18 @@ export class WithdrawalController {
   }
 
   @HttpCode(200)
-  @Post('/approve')
-  approve(
-    @Req() req: payload,
-    @Body() approveWithdrawalDto: ApproveWithdrawalDto,
-  ) {
+  @Post(':id/approve')
+  approve(@Req() req: payload, @Param('id') withdrawalId: string) {
     const role = req.user.role;
 
     const id = req.user.id;
-    return this.withdrawalService.approveWithdrawal(
-      approveWithdrawalDto.withdrawalId,
-      role,
-      id,
-    );
+    return this.withdrawalService.approveWithdrawal(withdrawalId, role, id);
+  }
+
+  @HttpCode(200)
+  @Post(':id/reject')
+  reject(@Req() req: payload, @Param('id') withdrawalId: string) {
+    const role = req.user.role;
+    return this.withdrawalService.rejectWithdrawal(withdrawalId, role);
   }
 }

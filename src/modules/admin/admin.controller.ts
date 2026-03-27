@@ -1,4 +1,5 @@
-import { Controller, Get, UseGuards, Query, Body, Post } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import { Controller, Get, UseGuards, Query, Body, Post, Param } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from 'src/common/guard/roles/roles.decorator';
 import { RolesGuard } from 'src/common/guard/roles/roles.guard';
@@ -20,7 +21,7 @@ export class AdminController {
   ) {}
 
   @Roles('admin')
-  @Get('members/all')
+  @Get('member/all')
   getAllMembers(@Query() query: GetMembersQueryDto) {
     return this.adminService.getAllMembers(query);
   }
@@ -59,5 +60,11 @@ export class AdminController {
   @Post('contribution/record')
   recordContribution(@Body() payload: RecordContributionDto) {
     return this.adminService.recordContribution(payload);
+  }
+
+  @Roles('admin')
+  @Get('loan/:memberId')
+  fectchActiveLoansForMember(@Param('memberId') memberId: string, @Query('status') status: string) {
+    return this.adminService.fectchActiveLoansForMember(memberId, status);
   }
 }

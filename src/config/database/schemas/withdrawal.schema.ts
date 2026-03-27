@@ -5,8 +5,8 @@ export type WithdrawalDocument = HydratedDocument<Withdrawal>;
 
 @Schema({ collection: 'withdrawals', timestamps: true })
 export class Withdrawal {
-  @Prop({ type: Types.ObjectId, ref: 'Member', required: true })
-  memberId: Types.ObjectId;
+  @Prop({ type: String, ref: 'Member', required: true })
+  memberId: string;
 
   @Prop({ type: Number, required: true })
   amount: number;

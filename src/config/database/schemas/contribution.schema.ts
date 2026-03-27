@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 
 export type ContributionDocument = HydratedDocument<Contribution>;
 
@@ -8,8 +8,8 @@ export type ContributionDocument = HydratedDocument<Contribution>;
   timestamps: { createdAt: true, updatedAt: false },
 })
 export class Contribution {
-  @Prop({ type: Types.ObjectId, ref: 'Member', required: true })
-  memberId: Types.ObjectId;
+  @Prop({ type: String, ref: 'Member', required: true })
+  memberId: string;
 
   @Prop({ type: Number, required: true })
   amount: number;
