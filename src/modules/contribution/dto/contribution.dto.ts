@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class createContributionDto {
   @IsNotEmpty()
@@ -6,7 +6,7 @@ export class createContributionDto {
   memberId: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsNumber()
   amount: number;
 
   @IsNotEmpty()

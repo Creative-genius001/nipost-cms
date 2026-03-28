@@ -36,7 +36,7 @@ export class GetLoansQueryDto {
 export class ApproveLoanDto {
   @IsString()
   @IsOptional()
-  loanId: string;
+  loanId?: string;
 
   @IsString()
   memberId: string;

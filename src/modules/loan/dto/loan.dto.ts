@@ -7,7 +7,7 @@ export class LoanDto {
 
   @IsNotEmpty()
   @IsNumber()
-  amount: string;
+  amount: number;
 
   @IsNotEmpty()
   @IsString()

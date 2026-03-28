@@ -13,8 +13,8 @@ export class RequestWithdrawalDto {
   memberId: string;
 
   @IsNotEmpty()
-  @IsString()
-  amount: string;
+  @IsNumber()
+  amount: number;
 
   @IsNotEmpty()
   @IsString()
