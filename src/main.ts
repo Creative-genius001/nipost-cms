@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppLogger } from './common/logger/logger.service';
@@ -5,6 +7,7 @@ import * as dotenv from 'dotenv';
 import helmet from 'helmet';
 import { HttpExceptionsFilter } from './common/filters/http-exceptions.filter';
 import cookieParser from 'cookie-parser';
+import { ValidationPipe } from '@nestjs/common';
 
 declare const module: any;
 
@@ -15,7 +18,7 @@ async function bootstrap() {
 
   const logger = app.get(AppLogger);
   app.useLogger(logger);
-  // app.use(helmet());
+  app.use(helmet());
 
   app.use(cookieParser());
 
@@ -33,6 +36,17 @@ async function bootstrap() {
       'Accept',
     ],
   });
+
+  app.useGlobalFilters(new HttpExceptionsFilter(logger));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      dismissDefaultMessages: false,
+      stopAtFirstError: true,
+      transform: true,
+    }),
+  );
 
   app.useGlobalFilters(new HttpExceptionsFilter(logger));
 
