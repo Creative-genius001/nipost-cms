@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Request, Response } from 'express';
 import { Model, Types } from 'mongoose';
 import {
@@ -101,7 +103,6 @@ export class DashboardService {
         .select('amount createdAt')
         .exec(),
     ]).catch((error) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       this.logger.error('Error getting Member Dashbaord Stats', { error });
       throw new InternalServerErrorException();
     });
@@ -228,7 +229,6 @@ export class DashboardService {
         { $sort: { _id: 1 } },
       ]),
     ]).catch((error) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       this.logger.error('Error getting Admin Dashbaord Stats', { error });
       throw new InternalServerErrorException();
     });

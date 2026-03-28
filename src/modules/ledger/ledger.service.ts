@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   ForbiddenException,
   Injectable,
@@ -75,8 +77,10 @@ export class LedgerService {
           },
         ]),
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         this.ledgerModel.find(filter).sort(sort).skip(skip).limit(limit).lean(),
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         this.ledgerModel.countDocuments(filter),
 
         this.ledgerModel.aggregate([

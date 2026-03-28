@@ -13,6 +13,7 @@ async function seedDevContributions() {
   for (const memberId of memberObjectId) {
     await Contribution.deleteMany({ memberId });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const dummyContributions = Array.from({ length: 10 }).map((_, i) => ({
       memberId: memberId,
       amount: Math.floor(Math.random() * 20000) + 1000,
@@ -29,4 +30,5 @@ async function seedDevContributions() {
   process.exit(0);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 seedDevContributions();

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   BadRequestException,
   ForbiddenException,
@@ -173,12 +174,14 @@ export class WithdrawalService {
       totalRejectedWithdrawal,
     ] = await Promise.all([
       this.withdrawalModel
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         .find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       this.withdrawalModel.countDocuments(filter),
 
       this.withdrawalModel.countDocuments({

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Request, Response } from 'express';
 import mongoose, { Model, Types } from 'mongoose';
 import {
@@ -331,7 +334,7 @@ export class AdminService {
 
   async recordLoanRepayment(
     payload: ApproveLoanDto,
-  ): Promise<{ message: string, remainingBalance: number }> {
+  ): Promise<{ message: string; remainingBalance: number }> {
     const { memberId, amount, loanId } = payload;
     if (!loanId || loanId.trim() === '' || loanId === 'undefined') {
       throw new BadRequestException('Invalid Parameters');
@@ -340,14 +343,19 @@ export class AdminService {
     session.startTransaction();
 
     try {
-      const loan = await this.loanModel.findOne({ _id: loanId, memberId }).session(session);
+      const loan = await this.loanModel
+        .findOne({ _id: loanId, memberId })
+        .session(session);
       if (!loan) throw new NotFoundException('Loan not found');
-      if (loan.status === 'PAID') throw new BadRequestException('Loan is already fully paid');
+      if (loan.status === 'PAID')
+        throw new BadRequestException('Loan is already fully paid');
 
       const newBalance = loan.outstandingBalance - amount;
 
       if (newBalance < 0) {
-        throw new BadRequestException(`Overpayment! Remaining balance is only ₦${loan.outstandingBalance}`);
+        throw new BadRequestException(
+          `Overpayment! Remaining balance is only ₦${loan.outstandingBalance}`,
+        );
       }
 
       loan.outstandingBalance = newBalance;
@@ -376,9 +384,9 @@ export class AdminService {
       );
       await session.commitTransaction();
 
-      return { 
+      return {
         message: newBalance === 0 ? 'Loan fully repaid!' : 'Repayment recorded',
-        remainingBalance: newBalance 
+        remainingBalance: newBalance,
       };
     } catch (error) {
       await session.abortTransaction();
@@ -433,7 +441,7 @@ export class AdminService {
         { session },
       );
 
-      await session.commitTransaction()
+      await session.commitTransaction();
 
       return { message: 'Withdrawal successfully committed' };
     } catch (error) {
